@@ -1,0 +1,43 @@
+name: Fix a track
+description: Report an error in the markup of a published track
+title: "[Fix] "
+labels: ["fix-track", "needs-review"]
+body:
+  - type: input
+    id: slug
+    attributes:
+      label: Track (slug or file path)
+      placeholder: "tracks/ru/igora-drive.json"
+    validations:
+      required: true
+  - type: checkboxes
+    id: what
+    attributes:
+      label: What is wrong
+      options:
+        - label: Start/finish not on the timing line / wrong direction / width
+        - label: Sectors
+        - label: Corners (numbers, names, extra or missing)
+        - label: Outline
+        - label: Name, country, surface, length
+        - label: Track closed / layout no longer used
+  - type: textarea
+    id: details
+    attributes:
+      label: Description
+      description: What exactly is wrong and how it should be. A link to the official map or a photo of the timing line helps.
+    validations:
+      required: true
+  - type: textarea
+    id: track_json
+    attributes:
+      label: Corrected JSON (if any)
+      description: From the app ("Send to the database" on this track) or edited by hand
+      render: json
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: The correction comes from my own session / survey / OpenStreetMap, not copied from RaceChrono or another app
+          required: true

@@ -1,0 +1,78 @@
+name: New track
+description: Submit the markup of a track layout (usually sent straight from the Apex app)
+title: "[Track] "
+labels: ["new-track", "needs-review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you! Please read the [markup rules](../blob/main/CONTRIBUTING.md) before submitting.
+        One submission — one track layout. A moderator will check the markup against satellite imagery and turn it into a PR.
+  - type: input
+    id: name
+    attributes:
+      label: Track and layout name
+      description: The official name in Latin script, and the local name
+      placeholder: "Igora Drive — Full"
+    validations:
+      required: true
+  - type: input
+    id: country
+    attributes:
+      label: Country (ISO 3166-1 alpha-2) and town
+      placeholder: "RU, Priozersk"
+    validations:
+      required: true
+  - type: checkboxes
+    id: marked
+    attributes:
+      label: What is marked
+      options:
+        - label: Start/finish
+        - label: Separate finish (point-to-point)
+        - label: Sectors
+        - label: Corners (numbers/names)
+        - label: Outline (lap line)
+  - type: dropdown
+    id: source
+    attributes:
+      label: Data source
+      options:
+        - My own GPS session (own-gps)
+        - My own on-site survey (survey)
+        - OpenStreetMap (osm, ODbL licence)
+        - Other — described below
+    validations:
+      required: true
+  - type: textarea
+    id: source_details
+    attributes:
+      label: Source details
+      description: Receiver and date of the session, OSM way ids, how it was checked. Data from the RaceChrono library or other apps is not accepted.
+      placeholder: "RaceBox Mini S, 25 Hz, session 2026-08-12, clean lap 1:32.4"
+    validations:
+      required: true
+  - type: textarea
+    id: track_json
+    attributes:
+      label: Track JSON
+      description: Paste the JSON from "Send to the database" in the app, or attach the .json file (drag it here). If it does not fit, link a gist.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: The official track map (link), anything special, other layouts of this venue
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: The markup comes from my own session / my own survey / OpenStreetMap, not copied from RaceChrono or another app
+          required: true
+        - label: I agree that the markup is published under the MIT licence (or the ODbL if it comes from OpenStreetMap)
+          required: true
+        - label: The JSON contains no personal data (sessions, VIN, names other than a GitHub handle)
+          required: true

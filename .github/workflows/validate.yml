@@ -1,0 +1,27 @@
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install jsonschema
+        run: pip install "jsonschema>=4.18,<5"
+      - name: Validator tests
+        run: python -m unittest discover -s tools -v
+      - name: Canonical formatting
+        run: python tools/format_track.py --check
+      - name: Validate tracks and index
+        run: python tools/validate.py
