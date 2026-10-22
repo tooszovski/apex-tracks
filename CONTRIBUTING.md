@@ -146,9 +146,23 @@ match an imported session with the track); no data is taken from the library by 
 
 ### Submissions from the app
 
-The app submits a track as an issue from the "New track" form with the JSON inside. A moderator reviews it, opens a PR
-with the file (`Closes #N`) and puts the submitter in `author`. Later a bot (a GitHub Action triggered by a label) will
-do this.
+The app submits a track as an issue from the "New track" form with the JSON inside (pasted into the "Track JSON"
+field, attached as a `.json` file, or linked as a gist). The moderator does not copy the file by hand:
+
+1. **Review the issue**: the source is plausible and allowed, it is not a duplicate, the confirmations are ticked.
+2. **Add the label `accepted`.** The bot ([`issue-to-pr.yml`](.github/workflows/issue-to-pr.yml)) takes the JSON,
+   puts the issue author in `author` if the file has none, writes `tracks/<country>/<slug>.json` with
+   `format_track.py`, rebuilds `index.json` and runs `validate.py`.
+   - Errors: the bot lists them in a comment, moves the issue to `needs-changes` and removes `accepted`. When the
+     submitter has edited the issue, add `accepted` again.
+   - No errors: the bot opens the PR `track/issue-<N>` (`Closes #N`, the validator's warnings in the description),
+     labels it `needs-review` and starts the `validate` check on it. The review clock moves to the PR.
+3. **Review the bot's PR** as any other (see above): lines and outline against satellite imagery, the warnings.
+4. **Approve and merge.** The merge closes the issue.
+
+To rebuild the PR after the issue changed, remove `accepted` and add it again: the bot replaces its branch. Small
+fixes can also be pushed to the bot's branch directly (they are lost if the bot rebuilds it). Only people with triage
+access or more can add labels, so a submitter cannot start the bot.
 
 ## Review times
 
@@ -156,15 +170,18 @@ A submission must not hang for months. Every new track goes through these steps,
 
 | Step | Who | Deadline |
 |---|---|---|
-| A moderator takes the submission: assigns themselves, answers in the thread | moderator | **3 days** after it arrives |
+| A moderator takes the submission: assigns themselves, answers in the thread (for a "New track" issue: adds `accepted` or asks for changes) | moderator | **3 days** after it arrives |
 | Decision: merged, or `needs-changes` with a concrete list of what to fix, or closed with the reason | moderator | **14 days** after it arrives |
 | The submitter answers `needs-changes` | submitter | **30 days**, then the submission is closed (it can be reopened at any time) |
 
 Labels:
 
-- `needs-review` — waits for a moderator. Set by the issue forms and, for a PR that changes `tracks/`, by the bot.
+- `needs-review` — waits for a moderator. Set by the issue forms and, for a PR that changes `tracks/`, by the bot
+  (the labeler, or the issue bot for its own PRs).
   The moderator removes it when they decide (`needs-changes`, merge or close).
-- `needs-changes` — waits for the submitter.
+- `accepted` — a moderator took a "New track" submission: the bot turns it into a PR (see
+  [Submissions from the app](#submissions-from-the-app)). From then on the PR carries `needs-review`, the issue does not.
+- `needs-changes` — waits for the submitter. Set by a moderator or, when the submission does not validate, by the bot.
 - `overdue` — set by the bot when a `needs-review` submission has had no activity for 14 days; the bot pings the
   maintainer, who takes it over or hands it to another moderator. Nothing may stay `overdue` for more than a week.
 - `stale` — set by the bot after 21 days of silence on `needs-changes`; 9 days later the submission is closed.
