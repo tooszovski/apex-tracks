@@ -1,0 +1,118 @@
+name: issue to PR
+
+# A moderator adds `accepted` to a "New track" issue → the bot takes the track JSON from the issue (the form field,
+# an attached .json or a gist), puts the issue author in `author` if the file has none, formats it, rebuilds
+# index.json, validates, and opens (or updates) the PR `track/issue-<N>` with "Closes #N". On errors it comments
+# the list on the issue and moves it to `needs-changes`. Only people with triage access or more can add labels.
+#
+# The issue is untrusted input: the payload is read by tools/issue_to_track.py from $GITHUB_EVENT_PATH, never put
+# into a shell command or a ${{ }} expression inside `run:`. Only the tools from main run here.
+#
+# A PR opened with GITHUB_TOKEN does not start `pull_request` workflows, so the required check `validate` would never
+# appear. workflow_dispatch is the exception to that rule: the bot dispatches validate.yml on the PR branch, and its
+# `validate` job reports the required check on the PR head commit.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions: {}
+
+concurrency:
+  group: issue-to-pr-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  track-pr:
+    if: >-
+      github.event.label.name == 'accepted' &&
+      github.event.issue.state == 'open' &&
+      github.event.issue.pull_request == null &&
+      contains(github.event.issue.labels.*.name, 'new-track')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # push the track/issue-<N> branch
+      pull-requests: write   # open or update the PR
+      issues: write          # comment and change labels
+      actions: write         # dispatch validate.yml on the bot's branch (the required check)
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      NUMBER: ${{ github.event.issue.number }}
+    steps:
+      - name: Work directory
+        run: echo "BOT_DIR=$RUNNER_TEMP/issue-bot" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+      - name: Install jsonschema
+        run: pip install "jsonschema>=4.18,<5"
+
+      - name: Take the track out of the issue
+        id: extract
+        run: python tools/issue_to_track.py extract --event "$GITHUB_EVENT_PATH" --out "$BOT_DIR"
+
+      - name: Format, build the index, validate
+        if: steps.extract.outputs.ok == 'true'
+        env:
+          TRACK_PATH: ${{ steps.extract.outputs.path }}
+        run: |
+          python tools/format_track.py "$TRACK_PATH"
+          python tools/build_index.py
+          status=0
+          # Without GITHUB_ACTIONS the validator prints plain lines, which the next step parses.
+          env -u GITHUB_ACTIONS python tools/validate.py "$TRACK_PATH" > "$BOT_DIR/validate.txt" 2>&1 || status=$?
+          cat "$BOT_DIR/validate.txt"
+          echo "$status" > "$BOT_DIR/validate.status"
+
+      - name: Decide
+        id: report
+        run: |
+          status=$(cat "$BOT_DIR/validate.status" 2>/dev/null || echo 0)
+          python tools/issue_to_track.py report --event "$GITHUB_EVENT_PATH" --out "$BOT_DIR" \
+            --validate-log "$BOT_DIR/validate.txt" --validate-status "$status"
+
+      - name: Errors → needs-changes
+        if: steps.report.outputs.ok != 'true'
+        run: |
+          gh issue comment "$NUMBER" --body-file "$BOT_DIR/failure.md"
+          gh issue edit "$NUMBER" --add-label needs-changes --remove-label accepted --remove-label needs-review --remove-label overdue
+
+      - name: Push the branch and open or update the PR
+        if: steps.report.outputs.ok == 'true'
+        env:
+          TRACK_PATH: ${{ steps.extract.outputs.path }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          branch="track/issue-$NUMBER"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add -- "$TRACK_PATH" index.json
+          printf 'Add %s from #%s\n\nMade by the issue-to-pr bot from the "New track" issue #%s.\n' \
+            "$TRACK_PATH" "$NUMBER" "$NUMBER" > "$BOT_DIR/commit.txt"
+          git commit --quiet -F "$BOT_DIR/commit.txt"
+          # The branch belongs to the bot: a new run rebuilds it from main and the edited issue.
+          git push --force origin "HEAD:refs/heads/$branch"
+
+          pr=$(gh pr list --head "$branch" --base main --state open --json url --jq '.[0].url')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --body-file "$BOT_DIR/pr-body.md"
+            verb="updated"
+          else
+            pr=$(gh pr create --base main --head "$branch" --title "$ISSUE_TITLE" --body-file "$BOT_DIR/pr-body.md")
+            verb="opened"
+          fi
+          # The labeler does not run on a PR made with GITHUB_TOKEN: set the review label here.
+          gh pr edit "$pr" --add-label needs-review
+          # The required check `validate`: pull_request workflows do not start for this PR, workflow_dispatch does.
+          gh workflow run validate.yml --ref "$branch"
+
+          printf 'The bot %s the pull request %s. A moderator reviews it there; it closes this issue when merged.\n' \
+            "$verb" "$pr" > "$BOT_DIR/done.md"
+          gh issue comment "$NUMBER" --body-file "$BOT_DIR/done.md"
+          # The PR carries the review clock now (needs-review / overdue); the issue waits for it.
+          gh issue edit "$NUMBER" --remove-label needs-review --remove-label needs-changes --remove-label overdue --remove-label stale
