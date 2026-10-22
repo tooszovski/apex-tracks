@@ -45,9 +45,12 @@ index.json + tracks/…/*.json  ──►  the app downloads the database and of
 ## Using the data outside the app
 
 ```sh
-curl -s https://raw.githubusercontent.com/tooszovski/apex-tracks/main/index.json
-curl -s https://raw.githubusercontent.com/tooszovski/apex-tracks/main/tracks/<country>/<slug>.json
+curl -s https://tooszovski.github.io/apex-tracks/index.json
+curl -s https://tooszovski.github.io/apex-tracks/tracks/<country>/<slug>.json
 ```
+
+The app reads the database from GitHub Pages (published from `main` on every merge); `raw.githubusercontent.com`
+works too.
 
 - Coordinates are WGS 84 decimal degrees; a line's `heading` is the compass bearing of the direction of travel
   (0° is north); `width` is the full width of the line in metres.
