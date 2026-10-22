@@ -40,7 +40,8 @@ builds the file in the right format. Below is what the file must contain if you 
   requires it to match the outline's direction at that spot within ±30°.
 - `width` — the full width of the line in metres. It must cover the track with a margin for GPS error,
   but **must not reach a parallel straight or the pit lane**, or a lap will be counted in the wrong place.
-  Typically **20–40 m**; 5–80 m is allowed (the validator warns outside 15–50).
+  Typically **20–40 m**; 5–100 m is allowed (the validator warns outside 15–50). Lines imported from RaceChrono
+  are often 100 m wide: narrow them where a parallel straight or the pit lane is near.
 - The middle of the line is no further than 20 m from the outline.
 
 ## Separate finish (`finish`)
