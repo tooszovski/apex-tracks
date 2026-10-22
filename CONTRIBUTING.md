@@ -140,7 +140,7 @@ match an imported session with the track); no data is taken from the library by 
    and/or against a recorded lap.
 3. No duplicate; layouts are linked with `variantOf`.
 4. The source is plausible and allowed.
-5. **At least one approval** from a moderator (CODEOWNERS) → merge into `main`. After the merge the track reaches every
+5. **At least one approval** from a moderator (CODEOWNERS) → merge into `main`, within the [review times](#review-times). After the merge the track reaches every
    app user with the next database update.
 
 ### Submissions from the app
@@ -148,6 +148,33 @@ match an imported session with the track); no data is taken from the library by 
 The app submits a track as an issue from the "New track" form with the JSON inside. A moderator reviews it, opens a PR
 with the file (`Closes #N`) and puts the submitter in `author`. Later a bot (a GitHub Action triggered by a label) will
 do this.
+
+## Review times
+
+A submission must not hang for months. Every new track goes through these steps, and the bot keeps the clock:
+
+| Step | Who | Deadline |
+|---|---|---|
+| A moderator takes the submission: assigns themselves, answers in the thread | moderator | **3 days** after it arrives |
+| Decision: merged, or `needs-changes` with a concrete list of what to fix, or closed with the reason | moderator | **14 days** after it arrives |
+| The submitter answers `needs-changes` | submitter | **30 days**, then the submission is closed (it can be reopened at any time) |
+
+Labels:
+
+- `needs-review` — waits for a moderator. Set by the issue forms and, for a PR that changes `tracks/`, by the bot.
+  The moderator removes it when they decide (`needs-changes`, merge or close).
+- `needs-changes` — waits for the submitter.
+- `overdue` — set by the bot when a `needs-review` submission has had no activity for 14 days; the bot pings the
+  maintainer, who takes it over or hands it to another moderator. Nothing may stay `overdue` for more than a week.
+- `stale` — set by the bot after 21 days of silence on `needs-changes`; 9 days later the submission is closed.
+
+**One approval is required** for every PR (branch protection, CODEOWNERS). A moderator does not approve their own
+submission: another moderator reviews it. While the maintainer is the only moderator, they merge their own PRs with
+the admin override and say so in the PR.
+
+## Moderators
+
+The list and how to become one: [MODERATORS.md](MODERATORS.md).
 
 ## Locally
 
