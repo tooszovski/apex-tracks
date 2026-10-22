@@ -1,0 +1,59 @@
+name: Become a moderator
+description: Offer to review new tracks and fixes
+title: "[Moderator] "
+labels: ["moderator-application"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you! Moderators check submitted tracks against satellite imagery or a recorded lap and approve PRs.
+        Please read [MODERATORS.md](../blob/main/MODERATORS.md) and the [review times](../blob/main/CONTRIBUTING.md#review-times) first.
+  - type: input
+    id: region
+    attributes:
+      label: Region and tracks
+      description: Which tracks you know well enough to review
+      placeholder: "North-West Russia: Igora Drive, Shushary, winter tracks near St Petersburg"
+    validations:
+      required: true
+  - type: textarea
+    id: experience
+    attributes:
+      label: Your driving
+      description: Track days, club, series, how often you are at these tracks; your Apex or other lap timer
+    validations:
+      required: true
+  - type: dropdown
+    id: github
+    attributes:
+      label: GitHub experience
+      options:
+        - I review PRs regularly
+        - I have made PRs and comments
+        - I am new to GitHub but ready to learn
+    validations:
+      required: true
+  - type: dropdown
+    id: time
+    attributes:
+      label: Time
+      description: A submission must be answered within 3 days and decided within 14 days
+      options:
+        - A few submissions a week
+        - A few submissions a month
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Tracks you have already marked, links, how to reach you
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have read the markup rules and the review times
+          required: true
+        - label: I will not approve my own submissions
+          required: true

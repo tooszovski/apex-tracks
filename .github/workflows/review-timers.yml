@@ -1,0 +1,65 @@
+name: review timers
+
+# Keeps the review times from CONTRIBUTING.md: a PR that changes tracks/ gets needs-review; a submission
+# without activity for 14 days becomes overdue; needs-changes without an answer is closed after 30 days.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  label:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      # Only reads the changed paths: the PR's code is never checked out or run here.
+      - uses: actions/labeler@v5
+        with:
+          sync-labels: false
+
+  overdue:
+    if: github.event_name != 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          only-labels: needs-review
+          days-before-stale: 14
+          days-before-close: -1
+          remove-stale-when-updated: false
+          stale-issue-label: overdue
+          stale-pr-label: overdue
+          stale-issue-message: >-
+            No decision on this submission for 14 days. @tooszovski — please take it over or hand it to another
+            moderator (see Review times in CONTRIBUTING.md).
+          stale-pr-message: >-
+            No decision on this PR for 14 days. @tooszovski — please take it over or hand it to another
+            moderator (see Review times in CONTRIBUTING.md).
+
+  author-silence:
+    if: github.event_name != 'pull_request_target'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          only-labels: needs-changes
+          days-before-stale: 21
+          days-before-close: 9
+          stale-issue-label: stale
+          stale-pr-label: stale
+          stale-issue-message: >-
+            This submission has been waiting for your changes for 3 weeks. It will be closed in 9 days without an
+            answer; you can reopen it at any time.
+          stale-pr-message: >-
+            This PR has been waiting for your changes for 3 weeks. It will be closed in 9 days without an answer;
+            you can reopen it at any time.
+          close-issue-message: Closed after 30 days without an answer. Reopen it when you are ready.
+          close-pr-message: Closed after 30 days without an answer. Reopen it when you are ready.

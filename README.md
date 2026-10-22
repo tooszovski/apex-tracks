@@ -40,6 +40,7 @@ index.json + tracks/…/*.json  ──►  the app downloads the database and of
 | `tools/validate.py` | checks: schema, geometry, licences, uniqueness, index freshness |
 | `tools/format_track.py` | rewrites a file in the canonical layout |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | markup and moderation rules — **read before submitting** |
+| [`MODERATORS.md`](MODERATORS.md) | who reviews submissions and how to become a moderator |
 
 ## Using the data outside the app
 
