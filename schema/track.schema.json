@@ -117,7 +117,7 @@
       "properties": {
         "point": { "$ref": "#/$defs/geoPoint" },
         "heading": { "description": "Compass bearing of travel, degrees: 0 north, 90 east.", "type": "number", "minimum": 0, "exclusiveMaximum": 360 },
-        "width": { "description": "Full width, metres.", "type": "number", "minimum": 5, "maximum": 80 }
+        "width": { "description": "Full width, metres.", "type": "number", "minimum": 5, "maximum": 100 }
       }
     },
     "corner": {

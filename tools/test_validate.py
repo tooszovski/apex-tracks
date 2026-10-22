@@ -1,10 +1,13 @@
 """The validator catches the mistakes it is there for: python3 -m unittest discover tools"""
 
 import copy
+import json
 import unittest
 
+import jsonschema
+
 import validate
-from trackfile import TRACKS, load_raw, to_plain
+from trackfile import SCHEMA, TRACKS, load_raw, to_plain
 
 EXAMPLE = TRACKS / "_example" / "example-circuit.json"
 
@@ -72,6 +75,14 @@ class ValidatorTests(unittest.TestCase):
 
     def test_example_flag_required(self):
         self.assertTrue(any("example" in m for m in run(lambda t: t.pop("example"))))
+
+    def test_gate_width_limits(self):
+        validator = jsonschema.Draft202012Validator(json.loads(SCHEMA.read_text(encoding="utf-8")))
+        track = to_plain(load_raw(EXAMPLE))
+        for width, valid in ((100, True), (101, False), (4, False)):
+            t = copy.deepcopy(track)
+            t["startFinish"]["width"] = width
+            self.assertEqual(validator.is_valid(t), valid, width)
 
 
 if __name__ == "__main__":
